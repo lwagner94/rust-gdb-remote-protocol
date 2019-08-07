@@ -283,6 +283,8 @@ enum Command<'a> {
     RemoveReadWatchpoint(Watchpoint),
     /// Remove an access watchpoint.
     RemoveAccessWatchpoint(Watchpoint),
+    Step,
+    Continue
 }
 
 named!(gdbfeature<Known>, map!(map_res!(is_not_s!(";="), str::from_utf8), |s| {
@@ -613,6 +615,8 @@ fn command<'a>(i: &'a [u8]) -> IResult<&'a [u8], Command<'a>> {
          | tag!("?") => { |_| Command::TargetHaltReason }
          | parse_d_packet => { |pid| Command::Detach(pid) }
          | tag!("g") => { |_| Command::ReadGeneralRegisters }
+         | tag!("s") => { |_| Command::Step }
+         | tag!("c") => { |_| Command::Continue }
          | write_general_registers => { |bytes| Command::WriteGeneralRegisters(bytes) }
          | parse_h_packet => { |thread_id| Command::SetCurrentThread(thread_id) }
          | tag!("k") => { |_| Command::Kill(None) }
@@ -884,6 +888,16 @@ pub trait Handler {
 
     /// Remove an access watchpoint.
     fn remove_access_watchpoint(&self, _watchpoint: Watchpoint) -> Result<(), Error> {
+        Err(Error::Unimplemented)
+    }
+
+    /// Step
+    fn step(&self) -> Result<StopReason, Error> {
+        Err(Error::Unimplemented)
+    }
+
+    /// continue
+    fn cont(&self) -> Result<StopReason, Error> {
         Err(Error::Unimplemented)
     }
 }
@@ -1258,6 +1272,12 @@ fn handle_packet<H, W>(data: &[u8],
             }
             Command::RemoveAccessWatchpoint(wp) => {
                 handler.remove_access_watchpoint(wp).into()
+            }
+            Command::Step => {
+                handler.step().into()
+            }
+            Command::Continue => {
+                handler.cont().into()
             }
         }
     } else { Response::Empty };

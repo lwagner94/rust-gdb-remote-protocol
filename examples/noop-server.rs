@@ -1,10 +1,13 @@
 extern crate env_logger;
 extern crate gdb_remote_protocol;
 
-use gdb_remote_protocol::{Error,Handler,ProcessType,process_packets_from,StopReason};
+use gdb_remote_protocol::{Error,Handler,ProcessType,process_packets_from,StopReason, MemoryRegion};
 use std::net::TcpListener;
+use std::cell::RefCell;
 
-struct NoopHandler;
+struct NoopHandler {
+    pc: RefCell<u8>
+}
 
 impl Handler for NoopHandler {
     fn attached(&self, _pid: Option<u64>) -> Result<ProcessType, Error> {
@@ -12,7 +15,31 @@ impl Handler for NoopHandler {
     }
 
     fn halt_reason(&self) -> Result<StopReason, Error> {
-        Ok(StopReason::Exited(23, 0))
+        Ok(StopReason::Signal(5))
+    }
+
+    fn read_memory(&self, _region: MemoryRegion) -> Result<Vec<u8>, Error> {
+        println!("Foobar");
+        Ok(vec![10; 1])
+    }
+
+    fn read_general_registers(&self) -> Result<Vec<u8>, Error> {
+        let mut v = vec![0; 32*4];
+        v.push(*self.pc.borrow());
+        v.push(0);
+        v.push(0);
+        v.push(0);
+
+        Ok(v)
+    }
+
+    fn step(&self) -> Result<StopReason, Error> {
+        *self.pc.borrow_mut() += 4;
+        Ok(StopReason::Signal(5))
+    }
+
+    fn cont(&self) -> Result<StopReason, Error> {
+        Ok(StopReason::Signal(5))
     }
 }
 
@@ -24,7 +51,9 @@ fn main() {
     for res in listener.incoming() {
         println!("Got connection");
         if let Ok(stream) = res {
-            let h = NoopHandler;
+            let h = NoopHandler {
+                pc: RefCell::new(0x24)
+            };
             process_packets_from(stream.try_clone().unwrap(), stream, h);
         }
         println!("Connection closed");

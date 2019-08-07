@@ -1,8 +1,8 @@
 [package]
 name = "gdb-remote-protocol"
-version = "0.1.0"
+version = "0.2.0"
 description = "An implementation of the GDB remote protocol"
-authors = ["Ted Mielczarek <ted@mielczarek.org>"]
+authors = ["Ted Mielczarek <ted@mielczarek.org>", "Lukas Wagner <lwagner94@posteo.at>"]
 license = "Apache-2.0/MIT"
 
 [dependencies]
