@@ -1121,13 +1121,7 @@ fn write_response<W>(response: Response, writer: &mut W) -> io::Result<()>
 fn handle_supported_features<'a, H>(handler: &H, _features: &Vec<GDBFeatureSupported<'a>>) -> Response<'static>
     where H: Handler,
 {
-    let mut features = vec!("PacketSize=65536".to_string(),
-                            "QStartNoAckMode+".to_string(),
-                            "multiprocess+".to_string(),
-                            "QDisableRandomization+".to_string(),
-                            "QCatchSyscalls+".to_string(),
-                            "QPassSignals+".to_string(),
-                            "QProgramSignals+".to_string());
+    let mut features = vec!("PacketSize=65536".to_string());
     let mut new_features = handler.query_supported_features();
     features.append(&mut new_features);
     Response::String(Cow::Owned(features.join(";")) as Cow<str>)
